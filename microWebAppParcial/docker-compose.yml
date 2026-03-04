@@ -1,0 +1,80 @@
+services:
+
+  consul:
+    image: hashicorp/consul:1.15
+    container_name: consul
+    command: agent -dev -client=0.0.0.0
+    ports:
+      - "8500:8500"
+
+  mysql_users:
+    image: mysql:8.0
+    container_name: mysql_users
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: users_db
+    ports:
+      - "3307:3306"
+
+  mysql_products:
+    image: mysql:8.0
+    container_name: mysql_products
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: products_db
+    ports:
+      - "3308:3306"
+
+  mysql_orders:
+    image: mysql:8.0
+    container_name: mysql_orders
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: orders_db
+    ports:
+      - "3309:3306"
+
+  users:
+    build:
+      context: ./microUsers
+      dockerfile: Dockerfile
+    container_name: micro_users
+    ports:
+      - "5000:5000"
+    depends_on:
+      - mysql_users
+      - consul
+
+  products:
+    build:
+      context: ./microProducts
+      dockerfile: Dockerfile
+    container_name: micro_products
+    ports:
+      - "5001:5001"
+    depends_on:
+      - mysql_products
+      - consul
+
+  orders:
+    build:
+      context: ./microOrders
+      dockerfile: Dockerfile
+    container_name: micro_orders
+    ports:
+      - "5002:5002"
+    depends_on:
+      - mysql_orders
+      - consul
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: frontend
+    ports:
+      - "8000:5001"
+    depends_on:
+      - users
+      - products
+      - orders

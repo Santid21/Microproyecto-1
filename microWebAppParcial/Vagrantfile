@@ -1,0 +1,69 @@
+Vagrant.configure("2") do |config|
+
+  config.vm.box = "ubuntu/focal64"
+
+  config.vm.hostname = "microservices-parcial"
+
+  config.vm.network "private_network", ip: "192.168.56.10"
+
+  config.vm.provider "virtualbox" do |vb|
+    vb.memory = 4096
+    vb.cpus = 2
+  end
+
+  config.vm.provision "shell", privileged: true, run: "always", inline: <<SHELL
+
+echo "===== ACTUALIZANDO SISTEMA ====="
+apt update -y
+
+echo "===== ELIMINANDO VERSIONES ANTIGUAS DE DOCKER ====="
+apt remove -y docker docker-engine docker.io containerd runc || true
+
+echo "===== INSTALANDO DOCKER OFICIAL ====="
+apt install -y ca-certificates curl gnupg lsb-release
+
+mkdir -p /etc/apt/keyrings
+
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+
+echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
+  $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+apt update -y
+
+apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
+systemctl enable docker
+systemctl start docker
+
+echo "===== VERIFICANDO VERSIONES ====="
+docker --version
+docker compose version
+
+echo "===== ENTRANDO A /vagrant ====="
+cd /vagrant
+
+echo "===== BAJANDO CONTENEDORES ANTERIORES ====="
+docker compose down || true
+
+echo "===== CONSTRUYENDO IMÁGENES ====="
+docker compose build
+
+echo "===== LEVANTANDO CONTENEDORES ====="
+docker compose up -d
+
+echo "===== ESPERANDO SERVICIOS ====="
+sleep 40
+
+echo "===== CONTENEDORES ACTIVOS ====="
+docker ps
+
+echo "===== PROBANDO CONSUL ====="
+curl http://localhost:8500/v1/status/leader || true
+
+echo "===== SISTEMA LISTO ====="
+
+SHELL
+
+end
