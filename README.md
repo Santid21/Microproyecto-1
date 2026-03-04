@@ -1,7 +1,6 @@
 # 🧩 MICROPROYECTO 1 – Computación en la Nube
 
-**Universidad Autónoma de Occidente**
-Autor: Santiago Duque Valencia
+ Santiago Duque Valencia y Kelvin Martinez
 
 ---
 
